@@ -1,89 +1,65 @@
 ## utils.py
 
-This file is our shared toolbox  
-we use it across all pipeline stages to keep data handling and basic indicators consistent
+This file is the shared toolbox across the pipeline.
 
-### what this file does
+We keep common data handling and indicator logic here so other scripts stay clean and consistent.
+
+## What this file provides
 
 ### 1) `ensure_directories()`
-We create required folders if they do not exist
-
+Creates required folders if they do not exist:
 - `processed/`
 - `outputs/`
 - `artifacts/`
 
-This avoids file-save errors in later steps
-
----
+This prevents save errors later.
 
 ### 2) `_find_col(columns, candidates)`
-We match column names in a flexible way
+Matches column names flexibly:
+- tries exact lowercase match first
+- falls back to substring match
 
-- exact lowercase match first
-- fallback to substring match
-
-This helps when input CSV naming changes like `timestamp` vs `date` or `adj_close` vs `close`
-
----
+This helps when CSV schemas vary (for example `timestamp` vs `date`, or `adj_close` vs `close`).
 
 ### 3) `load_prices(csv_path)`
-This is the main data normalizer
-
-We do the following in order
+Main data normalizer. It does:
 
 - read CSV
-- detect datetime column and parse it
+- detect and parse datetime column
 - sort by time and set index
-- drop timezone when possible
-- if multiple assets exist we keep the dominant symbol
-- rename columns to standard names: `open high low close volume`
+- remove timezone if present
+- if multiple assets exist, keep the dominant symbol
+- rename to standard OHLCV names (`open`, `high`, `low`, `close`, `volume`)
 - coerce numeric columns
-- ensure `close` exists (required)
-- fill missing `volume` with 0 if needed
-- drop rows with missing close
-- remove duplicated timestamps
+- ensure `close` exists
+- fill missing `volume` with 0 when needed
+- drop rows with missing `close`
+- remove duplicate timestamps
 
-Result is a clean OHLCV dataframe ready for feature engineering
-
----
+Result: a clean OHLCV dataframe ready for feature engineering.
 
 ### 4) `rsi(series, window=14)`
-We compute RSI using exponential smoothing
+Computes RSI with exponential smoothing:
 
-\[
-\Delta_t = P_t - P_{t-1}
-\]
-\[
-\text{gain}_t = \max(\Delta_t,0), \quad \text{loss}_t = \max(-\Delta_t,0)
-\]
-\[
-RS_t = \frac{EMA(\text{gain})}{EMA(\text{loss})+\epsilon}
-\]
-\[
-RSI_t = 100 - \frac{100}{1+RS_t}
-\]
+- `delta = P_t - P_(t-1)`
+- `gain = max(delta, 0)`
+- `loss = max(-delta, 0)`
+- `RS = EMA(gain) / (EMA(loss) + eps)`
+- `RSI = 100 - 100 / (1 + RS)`
 
-So RSI is bounded in \([0,100]\) and captures momentum pressure
-
----
+RSI stays in `[0, 100]` and captures momentum pressure.
 
 ### 5) `infer_bars_per_year(index, default=24*365)`
-We infer data frequency from median time delta between timestamps then annualize
+Infers frequency from the median timestamp delta and annualizes it:
 
-\[
-\text{bars\_per\_year} = \frac{365 \cdot 24 \cdot 3600}{\text{median\_seconds\_per\_bar}}
-\]
+- `bars_per_year = (365 * 24 * 3600) / median_seconds_per_bar`
 
-If inference is not reliable we fallback to default hourly frequency (`8760`)
+If inference is unreliable, we use the default hourly value (`8760`).
 
-This is used by backtest metrics for annualized volatility Sharpe Sortino and CAGR
+This is used for annualized backtest metrics like volatility, Sharpe, Sortino, and CAGR.
 
----
+## Why this file matters
 
-### why this file matters
+Centralizing low-level data hygiene reduces duplicated logic and keeps behavior consistent across pipeline stages.
 
-we keep all low-level data hygiene in one place  
-that makes every stage cleaner and reduces duplicated logic
-
-small note  
-`json` import in this file is currently unused so we can remove it without changing behavior
+Note: `json` is currently imported but unused, so it can be removed safely.

@@ -1,40 +1,43 @@
 ## 01_feature_engineering.py
 
-This file builds model input features from raw price data.
+This script turns raw price data into model-ready features.
 
-Output file:
+**Output**
 - `processed/features.csv`
 
-## Main logic
+## What we build
 
-We create momentum, volatility, trend, serial-correlation, and regime features.
+We create feature groups for:
+- momentum
+- volatility
+- trend
+- serial correlation
+- market regime
 
-Main features:
-- One-bar return: `ret_1 = close / close.shift(1) - 1`
-- K-bar return: `ret_k = close / close.shift(k) - 1`
-- Rolling volatility: rolling standard deviation of `ret_1` over a window `w`
-- Moving average gap: `ma_gap = sma_fast / sma_slow - 1`
-- Crossover flag: `ma_cross = 1` when `sma_fast > sma_slow`, else `0`
-- Lag feature: `ret_lag1 = ret_1.shift(1)`
+Main examples:
+- `ret_1 = close / close.shift(1) - 1`
+- `ret_k = close / close.shift(k) - 1`
+- rolling volatility from `ret_1` over window `w`
+- `ma_gap = sma_fast / sma_slow - 1`
+- `ma_cross = 1` when `sma_fast > sma_slow`, else `0`
+- `ret_lag1 = ret_1.shift(1)`
 
-We also compute:
+We also add:
 - RSI
-- Optional `vol_spike` when aggressive mode is enabled
+- optional `vol_spike` (enabled in aggressive mode)
 
-## Regime model
+## Regime detection
 
-We try a 2-state Markov switching model on returns.
-
-Saved outputs:
+We try a 2-state Markov switching model on returns and store:
 - `regime_prob_high_vol`
 - `regime_state_high_vol`
 
-If `statsmodels` is not available, we use a rolling-volatility rule as a fallback regime proxy.
+If `statsmodels` is unavailable, we fall back to a rolling-volatility rule.
 
-## Notes
+## Important note
 
-This file also keeps:
+We keep:
 - `close`
 - `market_ret_1`
 
-These are used later for evaluation and backtesting.
+These columns are needed later for evaluation and backtesting.

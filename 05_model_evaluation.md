@@ -1,12 +1,12 @@
 ## 05_model_evaluation.py
 
-This file evaluates classification quality on the 2021 test set.
+This script evaluates classification quality on the 2021 test set.
 
 Labels are binary direction classes: `-1` and `+1`.
 
-## Inputs
+## Input
 
-- `outputs/predictions.csv`
+- `outputs/predictions.csv`:
   - `y_true`
   - `y_pred`
 
@@ -17,24 +17,24 @@ Labels are binary direction classes: `-1` and `+1`.
 - `outputs/confusion_matrix.csv`
 - `outputs/confusion_matrix.png`
 
-## Evaluation logic
+## Evaluation flow
 
 - Read predictions.
-- Force class order as `[-1, +1]` for stable output layout.
-- Build confusion matrix with:
-  - Rows = true labels
-  - Columns = predicted labels
+- Enforce class order `[-1, +1]` for consistent reporting.
+- Build confusion matrix:
+  - rows = true labels
+  - columns = predicted labels
 
-## Metrics
+## Reported metrics
 
 - Accuracy
 - Macro precision
 - Macro recall
 - Macro F1
 
-Macro averaging gives equal weight to both classes, even if class counts differ.
+Macro averaging gives both classes equal weight, even if class counts differ.
 
-## Why this step matters
+## Why this matters
 
-- This step answers: did the model classify direction well?
-- Backtest step answers: did this become usable trading performance?
+This step tells us whether direction classification works.
+Backtesting then tells us whether that signal translates into usable trading performance.
