@@ -39,4 +39,4 @@ MIN_HOLD_BARS = 6
 # Sensitivity mode:
 # False -> keep current behavior
 # True  -> more sensitive to volatility/price variation
-SAFE_MODE = True
+SAFE_MODE = False
