@@ -1,4 +1,3 @@
-
 import json
 import numpy as np
 import pandas as pd
@@ -87,6 +86,59 @@ def _apply_min_hold(raw_signal: np.ndarray, min_hold: int) -> np.ndarray:
     return pos
 
 
+def _signal_from_proba(prob_up: pd.Series, mode: dict, long_only: bool) -> pd.Series:
+    p = (
+        prob_up.astype(float)
+        .clip(lower=0.0, upper=1.0)
+        .ewm(span=int(mode.get("prob_ewm_span", 12)), adjust=False)
+        .mean()
+    )
+
+    entry_long = float(mode.get("entry_long", mode.get("up_th", 0.55)))
+    exit_long = float(mode.get("exit_long", 0.50))
+    entry_short = float(mode.get("entry_short", mode.get("down_th", 0.45)))
+    exit_short = float(mode.get("exit_short", 0.50))
+    confirm = max(1, int(mode.get("confirm_bars", 1)))
+    allow_flip = bool(mode.get("allow_direct_flip", False))
+
+    out = np.zeros(len(p), dtype=int)
+    pos = 0
+    up_run = 0
+    down_run = 0
+
+    for i, x in enumerate(p.to_numpy()):
+        up_run = up_run + 1 if x >= entry_long else 0
+        down_run = down_run + 1 if x <= entry_short else 0
+
+        if pos == 1:
+            if x <= exit_long:
+                pos = 0
+            if allow_flip and (not long_only) and down_run >= confirm:
+                pos = -1
+
+        elif pos == -1:
+            if x >= exit_short:
+                pos = 0
+            if allow_flip and up_run >= confirm:
+                pos = 1
+
+        else:
+            if up_run >= confirm:
+                pos = 1
+            elif (not long_only) and down_run >= confirm:
+                pos = -1
+
+        if long_only and pos == -1:
+            pos = 0
+
+        out[i] = pos
+
+    sig = pd.Series(out, index=prob_up.index, dtype=int, name="signal")
+    if long_only and mode.get("neutral_to_long", False):
+        sig = sig.replace(0, 1)
+    return sig
+
+
 def main():
     ensure_directories()
 
@@ -96,24 +148,18 @@ def main():
     mode = get_mode_params()
 
     if "y_prob_up" in pred.columns:
-        raw_signal = np.where(
-            pred["y_prob_up"] >= mode["up_th"],
-            1,
-            np.where(pred["y_prob_up"] <= mode["down_th"], -1, 0),
-        )
+        signal = _signal_from_proba(pred["y_prob_up"], mode, LONG_ONLY)
     else:
-        raw_signal = pred["y_pred"].astype(int).values
+        signal = pred["y_pred"].astype(int).copy()
+        if LONG_ONLY:
+            signal = signal.clip(lower=0)
+            if mode.get("neutral_to_long", False):
+                signal = signal.replace(0, 1)
 
-    if LONG_ONLY:
-        if mode.get("neutral_to_long", False):
-            # keep exposure in uptrends; only exit on explicit down signal
-            raw_signal = np.where(raw_signal == -1, 0, 1)
-        else:
-            raw_signal = np.where(raw_signal == 1, 1, 0)
-
-    held_signal = _apply_min_hold(raw_signal, mode["min_hold"])
-    pred["signal"] = held_signal
-    pred["position"] = pd.Series(held_signal, index=pred.index).shift(1).fillna(0).astype(int)
+    hold_bars = max(int(MIN_HOLD_BARS), int(mode.get("min_hold", MIN_HOLD_BARS)))
+    signal = _apply_min_hold(signal, hold_bars)
+    pred["signal"] = signal
+    pred["position"] = pd.Series(signal, index=pred.index).shift(1).fillna(0).astype(int)
 
     turnover = pred["position"].diff().abs().fillna(0) / 2.0
     trading_cost = turnover * (COST_BPS / 10000.0)
