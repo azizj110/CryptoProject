@@ -1,73 +1,45 @@
 ## 06_backtest_optional.py
 
-This script converts model predictions into a trading simulation for the test period.
+This step converts model predictions into a trading simulation.
 
-It is optional in the pipeline, but useful to check whether prediction quality becomes PnL.
-
-## Inputs
+### Inputs
 
 - `outputs/predictions.csv`:
-  - `y_pred`
-  - optional `y_prob_up`
+  - `y_prob_up` (preferred) or `y_pred`
   - `market_ret_1`
   - `close`
 - `config.py`:
-  - `COST_BPS`
-  - `LONG_ONLY`
-  - thresholds
-  - holding constraints
+  - `COST_BPS`, `LONG_ONLY`, `MIN_HOLD_BARS`
 - `mode_profile.py`:
-  - `up_th`
-  - `down_th`
-  - `min_hold`
-  - `neutral_to_long`
+  - entry/exit thresholds
+  - smoothing/confirmation params
+  - hold profile
 
-## Outputs
+### Signal mapping (current logic)
+
+When probabilities are available, we:
+
+1. Smooth `y_prob_up` with EWM.
+2. Apply hysteresis-style logic:
+   - long entry/exit thresholds
+   - short entry/exit thresholds
+3. Use confirmation bars.
+4. Optionally allow direct long↔short flips (mode-dependent).
+5. Apply `LONG_ONLY` clipping if needed.
+
+Then we apply minimum holding logic and shift by one bar before trading:
+
+- `position_t = signal_{t-1}`
+
+### Return model
+
+- `strategy_ret = position * market_ret_1 - trading_cost`
+- `buyhold_ret = market_ret_1`
+- `turnover = abs(position_t - position_{t-1}) / 2`
+- `trading_cost = turnover * COST_BPS / 10000`
+
+### Outputs
 
 - `outputs/backtest_metrics.json`
 - `outputs/equity_curve.csv`
 - `outputs/equity_curve.png`
-
-## Signal-to-position logic
-
-1) Convert probability to raw signal:
-- `+1` if `p >= up_th`
-- `-1` if `p <= down_th`
-- `0` otherwise
-
-2) If `LONG_ONLY = True`:
-- conservative mode usually keeps `{1, 0}`
-- aggressive mode may map neutral to long
-
-3) Apply minimum hold using `_apply_min_hold` to reduce rapid flipping.
-
-4) Shift by one bar before applying returns:
-- `position_t = signal_(t-1)`
-- this avoids lookahead bias
-
-## Returns and cost model
-
-- strategy return:
-  - `strat_ret = position * market_ret - cost`
-- turnover:
-  - `turnover = abs(position_t - position_(t-1)) / 2`
-- trading cost:
-  - `cost = turnover * (COST_BPS / 10000)`
-- buy-and-hold:
-  - `bh_ret = market_ret`
-
-## Performance metrics
-
-From the equity curve (cumulative product of `1 + return`), we report:
-- `FinalEquity`
-- `CAGR`
-- annualized volatility
-- Sharpe
-- Sortino
-- Max Drawdown
-- average holding period (bars)
-
-## Why this matters
-
-Evaluation shows classification quality.
-Backtesting shows whether the edge survives costs and execution assumptions.

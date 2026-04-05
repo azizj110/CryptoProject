@@ -2,279 +2,181 @@
 
 ## Intro
 
-We evaluate four configurations under the same assignment-compliant framework:
+In this report, we compare four strategy setups built on the same ML pipeline:
 
-- **Train:** 2018-01-01 to 2020-12-31  
-- **Test:** 2021-01-01 to 2021-12-31  
-- **Training strategy:** `one_time`  
-- **Model family:** Random Forest classifier + rule-based signal mapping/backtest layer  
+1. SAFE + short allowed  
+2. SAFE + short not allowed  
+3. Aggressive + short allowed  
+4. Aggressive + short not allowed
 
-Configurations compared:
-
-1. **SAFE mode + short allowed**
-2. **SAFE mode + short not allowed**
-3. **Aggressive mode + short allowed**
-4. **Aggressive mode + short not allowed**
+We keep the same core train/test framework and only change profile + short policy.  
+This lets us isolate where performance differences come from.
 
 ---
 
-## Terms used in this report
+## Terms we use
 
-- **Accuracy**: fraction of correctly predicted labels.
-- **Precision (macro)**: precision averaged equally across classes (`-1`, `+1`).
-- **Recall (macro)**: recall averaged equally across classes.
-- **F1 (macro)**: harmonic mean of precision/recall, averaged equally across classes.
-- **Confusion matrix**: counts of true vs predicted classes.
-- **CAGR**: compounded annual growth rate.
-- **Volatility**: annualized standard deviation of returns.
-- **Sharpe**: return per unit of total volatility.
-- **Sortino**: return per unit of downside volatility.
-- **Max Drawdown (MDD)**: worst peak-to-trough decline.
-- **Final Equity**: ending equity multiple (starting at 1.0).
-- **AverageHoldingPeriodBars**: average duration of positions.
-- **MDI importance**: model impurity-based feature importance (in-model).
-- **PFI importance**: permutation feature importance (out-of-sample utility).
-- **Short allowed**: positions can be `-1, 0, +1`.
-- **Short not allowed**: positions restricted to `0, +1` (long-only).
+- **Accuracy / Precision / Recall / F1 (macro):** classification quality metrics.
+- **Confusion matrix:** true vs predicted class counts.
+- **Final Equity:** ending value of 1.0 initial capital.
+- **CAGR:** annualized compounded return.
+- **Volatility:** annualized return standard deviation.
+- **Sharpe / Sortino:** return-adjusted risk metrics.
+- **Max Drawdown:** worst peak-to-trough loss.
+- **MDI/PFI:** feature importance from model structure / permutation test.
 
 ---
 
-# 1) SAFE strategy
+# 1) SAFE profile
 
 ## 1.1 SAFE + short allowed
 
 ### Classification
 - Accuracy: **0.5306**
-- Precision (macro): **0.5305**
-- Recall (macro): **0.5305**
-- F1 (macro): **0.5303**
-
-Confusion matrix:
-- True -1: Pred -1 = 2217, Pred +1 = 1979
-- True +1: Pred -1 = 2133, Pred +1 = 2431
+- Macro F1: **0.5303**
+- Confusion matrix:
+  - True -1: 2217 / 1979
+  - True +1: 2133 / 2431
 
 ![SAFE + short allowed — Confusion Matrix](outputs_Safe_Strategy_shortAllowed/confusion_matrix.png)
 
 ### Backtest
-**Strategy**
 - Final Equity: **0.9604**
 - CAGR: **-0.0396**
 - Volatility: **0.8205**
 - Sharpe: **0.3669**
-- Sortino: **0.3638**
 - Max Drawdown: **-0.6098**
-- Avg holding: **22.67 bars**
-
-**Buy & Hold**
-- Final Equity: **1.5968**
-- CAGR: **0.5968**
-- Volatility: **0.9414**
-- Sharpe: **0.9719**
-- Sortino: **1.2191**
-- Max Drawdown: **-0.5476**
 
 ![SAFE + short allowed — Equity Curve](outputs_Safe_Strategy_shortAllowed/equity_curve.png)
 
-### Feature importance (SAFE model)
-- **MDI top features:** `vol_12` (0.1883), `ma_gap_8_24` (0.1686)
-- **MDI top clusters:** momentum (0.3571), serial_corr (0.2443)
-- **PFI top features:** `ret_6` (0.01357), `ma_gap_8_24` (0.01297)
-- **PFI top clusters:** momentum (0.02006), trend (0.01398)
+### Feature importance
+- MDI leader: `vol_12`
+- PFI leader: `ret_6`
+- Cluster leaders: momentum and serial-correlation families
 
 ![SAFE + short allowed — MDI Top Features](outputs_Safe_Strategy_shortAllowed/mdi_top_features.png)
-![SAFE + short allowed — MDI Cluster Importance](outputs_Safe_Strategy_shortAllowed/mdi_cluster_importance.png)
 ![SAFE + short allowed — PFI Top Features](outputs_Safe_Strategy_shortAllowed/pfi_top_features.png)
+![SAFE + short allowed — MDI Cluster Importance](outputs_Safe_Strategy_shortAllowed/mdi_cluster_importance.png)
 ![SAFE + short allowed — PFI Cluster Importance](outputs_Safe_Strategy_shortAllowed/pfi_cluster_importance.png)
 
 ---
 
-## 1.2 SAFE + short not allowed (long-only)
+## 1.2 SAFE + short not allowed
 
 ### Classification
-(Same model quality as SAFE short-allowed run)
-- Accuracy: **0.5306**
-- Precision (macro): **0.5305**
-- Recall (macro): **0.5305**
-- F1 (macro): **0.5303**
-
-Confusion matrix:
-- True -1: Pred -1 = 2217, Pred +1 = 1979
-- True +1: Pred -1 = 2133, Pred +1 = 2431
+Same classifier quality as SAFE short-allowed run.
 
 ![SAFE + short not allowed — Confusion Matrix](outputs_Safe_Strategy_shortNotAllowed/confusion_matrix.png)
 
 ### Backtest
-**Strategy**
 - Final Equity: **1.1533**
 - CAGR: **0.1533**
 - Volatility: **0.1285**
 - Sharpe: **1.1744**
-- Sortino: **0.2243**
 - Max Drawdown: **-0.1325**
-- Avg holding: **20.22 bars**
-
-**Buy & Hold**
-- Final Equity: **1.5968**
-- CAGR: **0.5968**
-- Volatility: **0.9414**
-- Sharpe: **0.9719**
-- Sortino: **1.2191**
-- Max Drawdown: **-0.5476**
 
 ![SAFE + short not allowed — Equity Curve](outputs_Safe_Strategy_shortNotAllowed/equity_curve.png)
 
 ### Feature importance
-Same as SAFE short-allowed (same trained model and feature files).
+Same SAFE model-family pattern (`vol_12` and momentum/trend features remain central).
 
 ![SAFE + short not allowed — MDI Top Features](outputs_Safe_Strategy_shortNotAllowed/mdi_top_features.png)
-![SAFE + short not allowed — MDI Cluster Importance](outputs_Safe_Strategy_shortNotAllowed/mdi_cluster_importance.png)
 ![SAFE + short not allowed — PFI Top Features](outputs_Safe_Strategy_shortNotAllowed/pfi_top_features.png)
+![SAFE + short not allowed — MDI Cluster Importance](outputs_Safe_Strategy_shortNotAllowed/mdi_cluster_importance.png)
 ![SAFE + short not allowed — PFI Cluster Importance](outputs_Safe_Strategy_shortNotAllowed/pfi_cluster_importance.png)
 
 ---
 
-## 1.3 SAFE comparison (short allowed vs short not allowed)
+## 1.3 SAFE comparison
 
-- Classification is essentially identical (same model quality).
-- Difference is from **signal-to-position mapping**, not prediction quality.
-- Disabling shorts improved outcomes materially:
-  - Final Equity: **0.9604 → 1.1533**
-  - MDD: **-0.6098 → -0.1325**
-  - Volatility: **0.8205 → 0.1285**
+When we disable shorting in SAFE mode, results improve a lot on this dataset:
+- better Final Equity
+- much lower drawdown
+- much lower volatility
 
-**Why:**  
-In this 2021 regime, the SAFE mapping with shorting likely converted modest model errors into costly short exposure and deeper drawdowns. Long-only SAFE behaves as a defensive, low-volatility filter instead.
+Interpretation: with a modest classifier edge (~53%), short exposure in SAFE mode added more harm than benefit in 2021.
 
 ---
 
-# 2) Aggressive strategy
+# 2) Aggressive profile
 
 ## 2.1 Aggressive + short allowed
 
 ### Classification
 - Accuracy: **0.5309**
-- Precision (macro): **0.5329**
-- Recall (macro): **0.5327**
-- F1 (macro): **0.5308**
-
-Confusion matrix:
-- True -1: Pred -1 = 2411, Pred +1 = 1785
-- True +1: Pred -1 = 2324, Pred +1 = 2240
+- Macro F1: **0.5308**
+- Confusion matrix:
+  - True -1: 2411 / 1785
+  - True +1: 2324 / 2240
 
 ![Aggressive + short allowed — Confusion Matrix](outputs_Agressive_Strategy_shortAllowed/confusion_matrix.png)
 
 ### Backtest
-**Strategy**
 - Final Equity: **2.0127**
 - CAGR: **1.0127**
 - Volatility: **0.6174**
 - Sharpe: **1.4467**
-- Sortino: **0.9825**
 - Max Drawdown: **-0.3230**
-- Avg holding: **19.50 bars**
-
-**Buy & Hold**
-- Final Equity: **1.5968**
-- CAGR: **0.5968**
-- Volatility: **0.9414**
-- Sharpe: **0.9719**
-- Sortino: **1.2191**
-- Max Drawdown: **-0.5476**
 
 ![Aggressive + short allowed — Equity Curve](outputs_Agressive_Strategy_shortAllowed/equity_curve.png)
 
-### Exposure (reported diagnostics)
-- Approx. long: **15.6%**
-- Approx. short: **10.5%**
-- Approx. flat: **73.9%**
-
-### Feature importance (Aggressive model)
-- **MDI top features:** `vol_12` (0.1689), `rsi_14` (0.1517)
-- **MDI top clusters:** momentum (0.3574), serial_corr (0.2123)
-- **PFI top feature:** `rsi_14` (0.00901)
-- **PFI top clusters:** momentum (0.00909), serial_corr (0.00117)
+### Feature importance
+- MDI leaders: `vol_12`, `rsi_14`
+- PFI leader: `rsi_14`
+- Cluster importance led by momentum
 
 ![Aggressive + short allowed — MDI Top Features](outputs_Agressive_Strategy_shortAllowed/mdi_top_features.png)
-![Aggressive + short allowed — MDI Cluster Importance](outputs_Agressive_Strategy_shortAllowed/mdi_cluster_importance.png)
 ![Aggressive + short allowed — PFI Top Features](outputs_Agressive_Strategy_shortAllowed/pfi_top_features.png)
+![Aggressive + short allowed — MDI Cluster Importance](outputs_Agressive_Strategy_shortAllowed/mdi_cluster_importance.png)
 ![Aggressive + short allowed — PFI Cluster Importance](outputs_Agressive_Strategy_shortAllowed/pfi_cluster_importance.png)
 
 ---
 
-## 2.2 Aggressive + short not allowed (long-only)
+## 2.2 Aggressive + short not allowed
 
 ### Classification
-(Same model quality as aggressive short-allowed run)
-- Accuracy: **0.5309**
-- Precision (macro): **0.5329**
-- Recall (macro): **0.5327**
-- F1 (macro): **0.5308**
-
-Confusion matrix:
-- True -1: Pred -1 = 2411, Pred +1 = 1785
-- True +1: Pred -1 = 2324, Pred +1 = 2240
+Same classifier quality as aggressive short-allowed run.
 
 ![Aggressive + short not allowed — Confusion Matrix](outputs_Agressive_Strategy_shortNotAllowed/confusion_matrix.png)
 
 ### Backtest
-**Strategy**
 - Final Equity: **2.2602**
 - CAGR: **1.2602**
 - Volatility: **0.5461**
 - Sharpe: **1.7717**
-- Sortino: **0.8826**
 - Max Drawdown: **-0.3410**
-- Avg holding: **18.76 bars**
-
-**Buy & Hold**
-- Final Equity: **1.5968**
-- CAGR: **0.5968**
-- Volatility: **0.9414**
-- Sharpe: **0.9719**
-- Sortino: **1.2191**
-- Max Drawdown: **-0.5476**
 
 ![Aggressive + short not allowed — Equity Curve](outputs_Agressive_Strategy_shortNotAllowed/equity_curve.png)
 
-### Exposure (reported diagnostics)
-- long: **17.93%**
-- short: **0%**
-- flat: **82.07%**
-
 ### Feature importance
-Same as aggressive short-allowed (same trained model and feature files).
+Feature hierarchy is consistent with aggressive short-allowed run.
 
 ![Aggressive + short not allowed — MDI Top Features](outputs_Agressive_Strategy_shortNotAllowed/mdi_top_features.png)
-![Aggressive + short not allowed — MDI Cluster Importance](outputs_Agressive_Strategy_shortNotAllowed/mdi_cluster_importance.png)
 ![Aggressive + short not allowed — PFI Top Features](outputs_Agressive_Strategy_shortNotAllowed/pfi_top_features.png)
+![Aggressive + short not allowed — MDI Cluster Importance](outputs_Agressive_Strategy_shortNotAllowed/mdi_cluster_importance.png)
 ![Aggressive + short not allowed — PFI Cluster Importance](outputs_Agressive_Strategy_shortNotAllowed/pfi_cluster_importance.png)
 
 ---
 
-## 2.3 Aggressive comparison (short allowed vs short not allowed)
+## 2.3 Aggressive comparison
 
-- Classification remains the same; backtest mapping drives performance difference.
-- In this test window, **aggressive long-only outperformed aggressive short-enabled**:
-  - Final Equity: **2.2602 vs 2.0127**
-  - Sharpe: **1.7717 vs 1.4467**
-  - Volatility: **0.5461 vs 0.6174**
+In 2021, aggressive long-only beat aggressive short-enabled:
+- higher Final Equity
+- higher Sharpe
+- lower volatility
 
-**Why:**  
-In a predominantly upward market structure, short trades can reduce upside capture and add wrong-way losses. Aggressive long-only retained strong timing benefits while avoiding short-side drag.
+Interpretation: shorting reduced upside capture in a market structure where long participation mattered more.
 
 ---
 
 # Final conclusion
 
-Across all four runs:
+Across all four runs, we observe:
 
-1. **Model classification edge is modest (~53% macro metrics) in every case.**
-2. **Performance differences come mainly from trading rules (short policy + signal mapping), not from major model-quality changes.**
-3. **Best overall result in this dataset:**  
-   **Aggressive + short not allowed** (highest equity and Sharpe among tested variants).
-4. **Worst result:**  
-   **SAFE + short allowed** (negative CAGR, largest drawdown among strategy variants).
-5. **Feature importance is stable across runs:**  
-   momentum/serial-correlation and selected trend features carry most useful signal; volatility feature `vol_12` is structurally important in MDI.
+1. Classification quality stays in a narrow range (~53% macro metrics).
+2. Most performance differences come from **signal mapping and short policy**, not from major classifier changes.
+3. Best observed configuration: **Aggressive + short not allowed**.
+4. Worst observed configuration: **SAFE + short allowed**.
+5. Feature-importance patterns are stable across runs, with momentum/serial-correlation signals repeatedly useful.
 
-Practical takeaway: for this 2021 test set, **shorting should be used very selectively (or disabled)**, while aggressive long-only mapping gave the strongest risk-adjusted outcome.
+So for this test year, we get better outcomes by keeping the strategy selective and limiting (or disabling) short exposure.

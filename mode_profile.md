@@ -1,63 +1,53 @@
 ## mode_profile.py
 
-This file controls strategy behavior.
+This file defines the profile-specific behavior used by multiple steps.
 
-We use one pipeline with two personalities:
-- conservative
-- volatility-sensitive
+`get_mode_params()` returns one dictionary consumed in:
 
-It reads base settings from `config.py` and returns a parameter dictionary via `get_mode_params()`.
+- `01_feature_engineering.py`
+- `03_model_development.py`
+- `06_backtest_optional.py`
 
-Other scripts consume this dictionary:
-- `01_feature_engineering.py` (feature windows, `vol_spike`)
-- `03_model_development.py` (volatility sample weighting)
-- `06_backtest_optional.py` (thresholds, holding logic, neutral handling)
+---
 
-## Mode logic
+## SAFE profile (`SAFE_MODE=True`)
 
-We branch on `SAFE_MODE`.
+Current parameters:
 
-### 1) `SAFE_MODE = True` (conservative)
+- `profile="conservative"`
+- `ret_window=8`, `vol_window=16`
+- `sma_fast=10`, `sma_slow=30`
+- `autocorr_window=24`
+- `entry_long=0.54`, `exit_long=0.50`
+- `entry_short=0.46`, `exit_short=0.50`
+- `prob_ewm_span=10`
+- `confirm_bars=1`
+- `allow_direct_flip=False`
+- `min_hold=3`
+- `enable_vol_spike=False`
+- `vol_weight_gamma=0.0`
+- `neutral_to_long=False`
 
-We reduce noise-chasing and trade less aggressively.
+---
 
-- longer windows:
-  - `ret_window=6`
-  - `vol_window=12`
-  - `sma_fast/sma_slow = 8/24`
-  - `autocorr_window=24`
-- stricter thresholds:
-  - `up_th = max(UP_PROBA_TH, 0.60)`
-  - `down_th = min(DOWN_PROBA_TH, 0.40)`
-- longer minimum hold:
-  - `min_hold = max(MIN_HOLD_BARS, 6)`
-- no extra volatility pressure:
-  - `enable_vol_spike=False`
-  - `vol_weight_gamma=0.0`
-- neutral stays neutral:
-  - `neutral_to_long=False`
+## Aggressive profile (`SAFE_MODE=False`)
 
-### 2) `SAFE_MODE = False` (aggressive / volatility-sensitive)
+Current parameters:
 
-We react faster to market variation.
+- `profile="aggressive"`
+- `ret_window=4`, `vol_window=10`
+- `sma_fast=6`, `sma_slow=18`
+- `autocorr_window=12`
+- `entry_long = min(0.56, max(0.51, UP_PROBA_TH - 0.04))`
+- `entry_short = max(0.44, min(0.49, DOWN_PROBA_TH + 0.04))`
+- `exit_long=0.50`, `exit_short=0.50`
+- `up_th/down_th` mirror entry thresholds
+- `prob_ewm_span=8`
+- `confirm_bars=1`
+- `allow_direct_flip=True`
+- `min_hold=max(2, MIN_HOLD_BARS // 2)`
+- `enable_vol_spike=True`
+- `vol_weight_gamma=0.6`
+- `neutral_to_long=False`
 
-- shorter windows:
-  - `ret_window=3`
-  - `vol_window=8`
-  - `sma_fast/sma_slow = 6/18`
-  - `autocorr_window=12`
-- more permissive thresholds:
-  - `up_th = min(0.55, UP_PROBA_TH - 0.05)`
-  - `down_th = max(0.45, DOWN_PROBA_TH + 0.05)`
-- shorter hold:
-  - `min_hold = min(3, max(1, floor(MIN_HOLD_BARS / 2)))`
-- volatility sensitivity enabled:
-  - `enable_vol_spike=True`
-  - `vol_weight_gamma=0.6`
-- neutral can map to long:
-  - `neutral_to_long=True`
-
-## Why this file matters
-
-We keep policy decisions separate from implementation details.
-That makes experiments cleaner: we can flip one switch and compare behavior under the same data and model setup.
+In short, we use SAFE for slower, stricter behavior and Aggressive for faster, more reactive behavior.
