@@ -37,7 +37,7 @@ Data/output folders:
 
 ---
 
-## Quick start (macOS)
+## Quick start
 
 ### 1) Create environment
 ```bash
