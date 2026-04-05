@@ -1,4 +1,4 @@
-# Comparative Analysis of Strategy Configurations (2021 Test Set)
+# High Risk, High Reward? Maybe.
 
 ## Intro
 
@@ -169,6 +169,27 @@ Interpretation: shorting reduced upside capture in a market structure where long
 
 ---
 
+# 3) SAFE vs Aggressive (family-level comparison)
+
+Now we compare profile families directly.
+
+### Classification quality
+- SAFE and Aggressive are close on prediction quality (both around macro F1 ≈ 0.53).
+- So differences in final performance mostly come from **strategy mapping**, not from classifier skill jumps.
+
+### Risk/return behavior
+- **SAFE family:** more defensive behavior, lower exposure, better capital protection when shorting is disabled.
+- **Aggressive family:** stronger growth profile; both aggressive variants beat Buy & Hold on Final Equity in this test year.
+- Best overall run: **Aggressive + short not allowed**.
+- Worst overall run: **SAFE + short allowed**.
+
+### Practical reading
+For this 2021 window, we should view:
+- SAFE as a protection-oriented profile
+- Aggressive as a return-seeking profile
+
+---
+
 # Final conclusion
 
 Across all four runs, we observe:
@@ -180,3 +201,6 @@ Across all four runs, we observe:
 5. Feature-importance patterns are stable across runs, with momentum/serial-correlation signals repeatedly useful.
 
 So for this test year, we get better outcomes by keeping the strategy selective and limiting (or disabling) short exposure.
+
+> **Note on shorting:**  
+> Shorting was likely not optimal here because the market regime was often upward and the short-entry mapping may be too permissive for a modest-skill model. We should retune short-specific parameters (entry/exit asymmetry, confirmation bars, hold length, and regime filters) before concluding that shorting is universally bad.
