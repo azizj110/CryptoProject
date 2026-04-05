@@ -1,30 +1,36 @@
 ## 04_feature_importance.py
 
-This file explains what drives model decisions
+This file explains which features drive model decisions.
 
-### methods
+## Methods
 
-1) MDI (tree impurity importance)  
-2) PFI (permutation importance with macro f1 scoring)
+1) MDI
+- Tree impurity-based importance from the trained Random Forest.
 
-for PFI we measure score drop after shuffling one feature
+2) PFI
+- Permutation importance using macro F1 scoring.
+- For each feature:
+  - Shuffle one feature column.
+  - Recompute score.
+  - Importance is score drop:
+    - `importance = score(original) - score(shuffled)`
 
-`importance_j = score(X,y) - score(shuffle_j(X), y)`
+## Cluster view
 
-### cluster view
+Features are grouped into families, then importance is summed inside each family.
 
-we group features by families and sum importances inside each cluster
-
+Families:
 - momentum
 - trend
 - volatility
 - serial_corr
 - regime
 
-`cluster_importance = sum(feature_importance in cluster)`
+Cluster importance:
+- Sum of feature importances within each cluster.
 
-### outputs
+## Outputs
 
-- feature-level csv: MDI and PFI
-- cluster-level csv: MDI and PFI
-- bar charts for top features and clusters
+- Feature-level CSV with MDI and PFI
+- Cluster-level CSV with MDI and PFI
+- Bar charts for top features and top clusters

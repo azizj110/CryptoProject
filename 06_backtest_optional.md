@@ -1,125 +1,74 @@
 ## 06_backtest_optional.py
 
-This file converts model predictions into a trading simulation on the test period  
-it is optional in pipeline order but essential if we want to answer the real question did prediction quality translate into PnL
+This file converts model predictions into a trading simulation on the test period.
 
-### what goes in
+It is optional in pipeline order, but useful to check whether prediction quality turns into PnL.
 
-- `outputs/predictions.csv`  
-  (`y_pred`, optional `y_prob_up`, `market_ret_1`, `close`)
-- config controls  
-  `COST_BPS`, `LONG_ONLY`, thresholds, holding constraints
-- mode profile controls from `mode_profile.py`  
-  mainly `up_th`, `down_th`, `min_hold`, and `neutral_to_long`
+## Inputs
 
-### what comes out
+- `outputs/predictions.csv`
+  - `y_pred`
+  - optional `y_prob_up`
+  - `market_ret_1`
+  - `close`
+- Config settings:
+  - `COST_BPS`
+  - `LONG_ONLY`
+  - thresholds
+  - holding constraints
+- `mode_profile.py` settings:
+  - `up_th`
+  - `down_th`
+  - `min_hold`
+  - `neutral_to_long`
+
+## Outputs
 
 - `outputs/backtest_metrics.json`
 - `outputs/equity_curve.csv`
 - `outputs/equity_curve.png`
 
----
+## Signal to position logic
 
-### signal to position logic
+1) Map probability to raw signal:
+- `+1` if `p >= up_th`
+- `-1` if `p <= down_th`
+- `0` otherwise
 
-we first map probabilities to raw signals
+2) If `LONG_ONLY = True`:
+- Conservative mode usually uses `{1, 0}`.
+- Aggressive mode may map neutral to long.
 
-\[
-s_t =
-\begin{cases}
-+1 & \text{if } p_t \ge \text{up\_th}\\
--1 & \text{if } p_t \le \text{down\_th}\\
-0 & \text{otherwise}
-\end{cases}
-\]
+3) Apply minimum hold bars with `_apply_min_hold` to reduce fast flipping.
 
-if `LONG_ONLY=True`  
-- conservative mode usually maps to \(\{1,0\}\)  
-- aggressive mode can map neutral to long (stay exposed unless explicit down)
+4) Shift signal by one bar before applying returns:
+- `position_t = signal_(t-1)`
+- This avoids lookahead bias.
 
-then we enforce minimum holding bars with `_apply_min_hold` so positions do not flip too often
+## Returns and costs
 
-very important  
-we shift one bar before applying returns
+- Strategy return per bar:
+  - `strat_ret = position * market_ret - cost`
+- Turnover:
+  - `turnover = abs(position_t - position_(t-1)) / 2`
+- Trading cost:
+  - `cost = turnover * (COST_BPS / 10000)`
+- Buy-and-hold return:
+  - `bh_ret = market_ret`
 
-\[
-\text{position}_t = s_{t-1}
-\]
+## Performance metrics
 
-this avoids lookahead bias
+- Equity curve from cumulative product of `(1 + return)`.
+- Reported metrics include:
+  - `FinalEquity`
+  - `CAGR`
+  - annualized volatility
+  - Sharpe
+  - Sortino
+  - Max Drawdown
+  - average holding period (bars)
 
----
+## Why this file matters
 
-### returns and costs
-
-strategy return per bar
-
-\[
-r^{strat}_t = \text{position}_t \cdot r^{mkt}_t - \text{cost}_t
-\]
-
-turnover is computed from position changes
-
-\[
-\text{turnover}_t = \frac{|\text{position}_t-\text{position}_{t-1}|}{2}
-\]
-
-trading cost
-
-\[
-\text{cost}_t = \text{turnover}_t \cdot \frac{\text{COST\_BPS}}{10000}
-\]
-
-buy and hold benchmark is just market return
-
-\[
-r^{bh}_t = r^{mkt}_t
-\]
-
----
-
-### performance metrics
-
-equity curve
-
-\[
-E_t = \prod_{i=1}^{t}(1+r_i)
-\]
-
-reported stats include
-
-- `FinalEquity`
-- `CAGR`
-
-\[
-\text{CAGR}=E_T^{\frac{\text{bars\_per\_year}}{T}}-1
-\]
-
-- annualized volatility
-
-\[
-\sigma_{ann} = \text{std}(r)\sqrt{\text{bars\_per\_year}}
-\]
-
-- Sharpe
-
-\[
-\text{Sharpe}=\frac{\mu_{ann}}{\sigma_{ann}}
-\]
-
-- Sortino (downside volatility in denominator)
-- Max Drawdown
-
-\[
-\text{MDD}=\min_t\left(\frac{E_t}{\max_{i\le t}E_i}-1\right)
-\]
-
-- average holding period in bars
-
----
-
-### why this file matters
-
-section 5 tells us if labels are predicted better than chance  
-this section tells us if those predictions are tradable after costs and execution assumptions  
-so this is where we compare strategy vs buy and hold on absolute return and risk adjusted return
+- Evaluation step says whether direction classification improved.
+- Backtest step says whether that edge survives trading assumptions and costs.

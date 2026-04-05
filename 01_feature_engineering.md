@@ -1,41 +1,40 @@
 ## 01_feature_engineering.py
 
-This file builds the model input features from raw price data  
-output is `processed/features.csv`
+This file builds model input features from raw price data.
 
-### main logic
+Output file:
+- `processed/features.csv`
 
-we compute returns momentum volatility trend serial correlation and regime features
+## Main logic
 
-- one bar return  
-  `r_t = P_t / P_(t-1) - 1`
-- k bar return  
-  `r_t(k) = P_t / P_(t-k) - 1`
-- rolling volatility  
-  `vol_t = std(r_(t-w+1) ... r_t)`
-- moving average gap  
-  `ma_gap_t = SMA_fast_t / SMA_slow_t - 1`
-- crossover flag  
-  `ma_cross_t = 1 if SMA_fast_t > SMA_slow_t else 0`
-- lag feature  
-  `ret_lag1_t = r_(t-1)`
+We create momentum, volatility, trend, serial-correlation, and regime features.
 
-we also compute RSI and optional `vol_spike` when aggressive mode is enabled
+Main features:
+- One-bar return: `ret_1 = close / close.shift(1) - 1`
+- K-bar return: `ret_k = close / close.shift(k) - 1`
+- Rolling volatility: rolling standard deviation of `ret_1` over a window `w`
+- Moving average gap: `ma_gap = sma_fast / sma_slow - 1`
+- Crossover flag: `ma_cross = 1` when `sma_fast > sma_slow`, else `0`
+- Lag feature: `ret_lag1 = ret_1.shift(1)`
 
-### regime model
+We also compute:
+- RSI
+- Optional `vol_spike` when aggressive mode is enabled
 
-we use a 2-state Markov switching model on returns
+## Regime model
 
-`r_t = mu_(S_t) + epsilon_t`  
-`epsilon_t ~ N(0, sigma_(S_t)^2)`
+We try a 2-state Markov switching model on returns.
 
-then we store
-
+Saved outputs:
 - `regime_prob_high_vol`
 - `regime_state_high_vol`
 
-if statsmodels is unavailable we fallback to a rolling-vol rule based regime proxy
+If `statsmodels` is not available, we use a rolling-volatility rule as a fallback regime proxy.
 
-### notes
+## Notes
 
-this file also keeps `close` and `market_ret_1` for later evaluation and backtest
+This file also keeps:
+- `close`
+- `market_ret_1`
+
+These are used later for evaluation and backtesting.

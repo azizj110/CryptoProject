@@ -1,73 +1,40 @@
 ## 05_model_evaluation.py
 
-This file is the classification evaluation step  
-we take the model predictions on the 2021 test set and compute the core metrics for binary direction signals \(-1,+1\)
+This file evaluates classification quality on the 2021 test set.
 
-### what goes in
+Labels are binary direction classes: `-1` and `+1`.
+
+## Inputs
 
 - `outputs/predictions.csv`
   - `y_true`
   - `y_pred`
 
-### what comes out
+## Outputs
 
 - `outputs/evaluation_metrics.json`
 - `outputs/classification_report.txt`
 - `outputs/confusion_matrix.csv`
 - `outputs/confusion_matrix.png`
 
----
+## Evaluation logic
 
-### evaluation logic
+- Read predictions.
+- Force class order as `[-1, +1]` for stable output layout.
+- Build confusion matrix with:
+  - Rows = true labels
+  - Columns = predicted labels
 
-we read predictions then fix class order as `[-1, +1]`  
-that matters because confusion matrix rows and columns stay consistent across runs
+## Metrics
 
-\[
-CM =
-\begin{bmatrix}
-CM_{-1,-1} & CM_{-1,+1} \\
-CM_{+1,-1} & CM_{+1,+1}
-\end{bmatrix}
-\]
+- Accuracy
+- Macro precision
+- Macro recall
+- Macro F1
 
-where rows are true labels and columns are predicted labels
+Macro averaging gives equal weight to both classes, even if class counts differ.
 
----
+## Why this step matters
 
-### metrics computed
-
-- accuracy
-
-\[
-\text{Accuracy}=\frac{\#\text{correct}}{N}
-\]
-
-- macro precision
-
-\[
-\text{Precision}_{macro}=\frac{\text{Precision}_{-1}+\text{Precision}_{+1}}{2}
-\]
-
-- macro recall
-
-\[
-\text{Recall}_{macro}=\frac{\text{Recall}_{-1}+\text{Recall}_{+1}}{2}
-\]
-
-- macro F1
-
-\[
-F1_{macro}=\frac{F1_{-1}+F1_{+1}}{2}
-\]
-
-we use macro averaging so both classes get equal weight even if class counts differ
-
----
-
-### why this step matters
-
-this gives the clean model quality view before trading assumptions  
-then section 6 backtest converts these predictions into positions and PnL  
-so section 5 answers did we classify direction better than chance  
-section 6 answers did that become useful strategy returns
+- This step answers: did the model classify direction well?
+- Backtest step answers: did this become usable trading performance?
