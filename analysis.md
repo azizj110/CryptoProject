@@ -1,19 +1,84 @@
 # High risk high reward? Maybe
 ## Comparative analysis: SAFE_MODE on vs off (2021 test set)
 
-## 1) Methodology check
+## 1) Is this analysis coherent
 
-We keep a valid evaluation setup:
+Yes, globally it is coherent.
 
-- training strategy: `one_time`
-- train window: 2018-01-01 to 2020-12-31
-- test window: 2021-01-01 to 2021-12-31
+Quick consistency checks:
 
-So this remains assignment-compliant and avoids walk-forward refit leakage.
+- both confusion matrices sum to 8760 samples (full 2021 hourly bars)
+- SAFE accuracy = (2322 + 2344) / 8760 = 0.5326
+- AGGR accuracy = (2383 + 2316) / 8760 = 0.5364
+- interpretation aligns with backtest outputs:
+  - SAFE = lower risk, lower upside
+  - AGGR = higher risk, higher upside
+
+So the analysis direction is correct.
 
 ---
 
-## 2) Executive summary
+## 2) Methodology check
+
+We use a valid assignment setup:
+
+- training strategy: `one_time`
+- train: 2018-01-01 to 2020-12-31
+- test: 2021-01-01 to 2021-12-31
+
+This is clean and avoids retraining on test data.
+
+---
+
+## 3) Metric glossary (what each metric means)
+
+### Classification metrics
+
+- **Accuracy**: fraction of correct class predictions.
+- **Precision (macro)**: for each class (-1, +1), how many predicted labels are correct, then average equally.
+- **Recall (macro)**: for each class, how many true labels are recovered, then average equally.
+- **F1 (macro)**: harmonic mean of precision and recall per class, then average equally.
+
+Why macro: it gives equal weight to both classes, even if class frequencies differ.
+
+### Trading metrics
+
+- **Final Equity**: ending capital multiplier.  
+  Example: 1.40 means +40% total.
+- **CAGR**: annualized growth rate.
+- **Volatility**: annualized standard deviation of returns.
+- **Sharpe**: risk-adjusted return using total volatility.
+- **Sortino**: risk-adjusted return using downside volatility only.
+- **Max Drawdown**: worst peak-to-trough equity decline.
+- **Average Holding Bars**: average trade duration in bars.
+
+---
+
+## 4) Feature glossary (what model inputs mean)
+
+- **ret_1**: 1-bar return `(P_t / P_{t-1} - 1)`.
+- **ret_6**: 6-bar return (or mode-adjusted return window).
+- **rsi_14**: 14-period RSI momentum oscillator (0 to 100).
+- **vol_12**: rolling return volatility over 12 bars (or mode-adjusted window).
+- **ma_gap_8_24**: trend spread = `SMA_fast / SMA_slow - 1`.
+- **ma_cross_8_24**: binary trend flag: fast MA above slow MA or not.
+- **autocorr_24_lag1**: rolling lag-1 autocorrelation of returns.
+- **ret_lag1**: previous bar return.
+- **vol_spike**: normalized return shock `abs(ret_1) / vol_12` (when enabled).
+- **regime_prob_high_vol**: probability of high-vol regime (Markov switching output).
+- **regime_state_high_vol**: binary high-vol regime state from that probability.
+
+Cluster names in feature-importance plots:
+
+- **momentum**: ret_1, ret_6, rsi_14
+- **trend**: ma_gap_8_24, ma_cross_8_24
+- **volatility**: vol_12
+- **serial_corr**: autocorr_24_lag1, ret_lag1
+- **regime**: regime_prob_high_vol, regime_state_high_vol
+
+---
+
+## 5) Executive summary
 
 | Metric | SAFE_MODE = True | SAFE_MODE = False |
 |---|---:|---:|
@@ -28,15 +93,16 @@ So this remains assignment-compliant and avoids walk-forward refit leakage.
 | Avg Holding (bars) | 6.93 | 39.21 |
 | Buy&Hold Final Equity | 1.5968 | 1.5968 |
 
-Main conclusion:
-- SAFE mode = defensive profile (lower risk, lower upside)
-- SAFE off = aggressive profile (higher risk, higher upside), and in this run it beats buy-and-hold
+Interpretation:
+- SAFE mode protects capital path better.
+- AGGR mode captures trends better and beats buy-and-hold in this run.
+- AGGR does this with much larger absolute risk.
 
 ---
 
-## 3) SAFE_MODE = True (conservative profile)
+## 6) SAFE_MODE = True (conservative profile)
 
-### 3.1 Classification quality
+### Classification
 - Accuracy: **0.5326**
 - Macro Precision: **0.5335**
 - Macro Recall: **0.5335**
@@ -49,25 +115,17 @@ Confusion matrix:
 | -1 | 2322 | 1874 |
 | +1 | 2220 | 2344 |
 
-Interpretation:
-- We have a small but consistent edge over random.
-- Errors are fairly balanced across classes.
-
-### 3.2 Trading quality
-- Final Equity: **1.4047** (profitable in absolute terms)
+### Trading
+- Final Equity: **1.4047**
 - CAGR: **40.47%**
 - Volatility: **28.51%**
 - Max Drawdown: **-23.65%**
 
 Interpretation:
-- Strong downside control and smoother path.
-- Underperforms buy-and-hold on total return in 2021.
+- profitable but below buy-and-hold on total return
+- much lower volatility and shallower drawdown
 
-### 3.3 Feature behavior
-- Prior safe run was mostly trend/momentum driven.
-- `ma_gap_8_24` remained a core signal in that regime.
-
-### 3.4 Visuals (safe run)
+### Visuals (safe run)
 ![SAFE - Confusion Matrix](./outputs_Safe_Strategy/confusion_matrix.png)  
 ![SAFE - Equity Curve](./outputs_Safe_Strategy/equity_curve.png)  
 ![SAFE - MDI Top Features](./outputs_Safe_Strategy/mdi_top_features.png)  
@@ -77,9 +135,9 @@ Interpretation:
 
 ---
 
-## 4) SAFE_MODE = False (aggressive profile)
+## 7) SAFE_MODE = False (aggressive profile)
 
-### 4.1 Classification quality
+### Classification
 - Accuracy: **0.5364**
 - Macro Precision: **0.5377**
 - Macro Recall: **0.5377**
@@ -92,11 +150,7 @@ Confusion matrix:
 | -1 | 2383 | 1813 |
 | +1 | 2248 | 2316 |
 
-Interpretation:
-- Small but measurable improvement vs safe mode.
-- Class behavior remains balanced.
-
-### 4.2 Trading quality
+### Trading
 - Final Equity: **1.6826**
 - CAGR: **68.26%**
 - Volatility: **90.28%**
@@ -113,15 +167,10 @@ Benchmark (buy-and-hold):
 - Max Drawdown: **-54.76%**
 
 Interpretation:
-- We outperform buy-and-hold on return and slightly on risk-adjusted metrics in this run.
-- Risk remains high in absolute terms (large swings, deep drawdowns).
+- better upside capture and final return than benchmark
+- still very high-risk profile in absolute terms
 
-### 4.3 Feature behavior
-- Top feature is clearly **`rsi_14`**.
-- `ma_gap_8_24` remains important.
-- Momentum dominates cluster importance, especially in PFI.
-
-### 4.4 Visuals (aggressive run)
+### Visuals (aggressive run)
 ![AGGR - Confusion Matrix](./outputs_Agressive_Strategy/confusion_matrix.png)  
 ![AGGR - Equity Curve](./outputs_Agressive_Strategy/equity_curve.png)  
 ![AGGR - MDI Top Features](./outputs_Agressive_Strategy/mdi_top_features.png)  
@@ -131,7 +180,7 @@ Interpretation:
 
 ---
 
-## 5) Delta analysis (SAFE off minus SAFE on)
+## 8) Delta analysis (SAFE off minus SAFE on)
 
 - Accuracy: **+0.0038**
 - Macro F1: **+0.0037**
@@ -142,22 +191,22 @@ Interpretation:
 - Avg Holding: **+32.29 bars**
 
 Interpretation:
-- Turning safe mode off increases trend capture and total return.
-- Cost is materially higher risk and larger drawdown exposure.
+- turning SAFE off increases trend participation and return
+- cost is much larger risk and drawdown depth
 
 ---
 
-## 6) Final answer to title question
+## 9) Final answer
 
-Is this high risk high reward maybe
+Is this high risk high reward
 
-- For SAFE mode: **no**, it is mostly lower-risk/moderate-reward.
-- For SAFE off: **yes mostly**, this behaves like high-risk/high-reward and beat buy-and-hold in this 2021 run.
+- SAFE mode: mostly **no** (defensive profile)
+- SAFE off: mostly **yes** (aggressive profile)
 
 ---
 
-## 7) Practical recommendation
+## 10) Practical recommendation
 
-- Use **SAFE_MODE = True** when capital protection and smoother equity path are the priority.
-- Use **SAFE_MODE = False** when we accept higher drawdown to maximize upside capture.
-- For production use, we should add regime-based switching between the two profiles instead of keeping one fixed all year.
+- Use `SAFE_MODE = True` if stability and capital protection are primary.
+- Use `SAFE_MODE = False` if maximizing upside is primary and deep drawdowns are acceptable.
+- Best next step: add regime-switch logic to toggle between profiles dynamically.
