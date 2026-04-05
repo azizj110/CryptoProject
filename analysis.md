@@ -68,12 +68,12 @@ Interpretation:
 - `ma_gap_8_24` remained a core signal in that regime.
 
 ### 3.4 Visuals (safe run)
-![SAFE - Confusion Matrix](./outputs_safe/confusion_matrix.png)  
-![SAFE - Equity Curve](./outputs_safe/equity_curve.png)  
-![SAFE - MDI Top Features](./outputs_safe/mdi_top_features.png)  
-![SAFE - MDI Cluster Importance](./outputs_safe/mdi_cluster_importance.png)  
-![SAFE - PFI Top Features](./outputs_safe/pfi_top_features.png)  
-![SAFE - PFI Cluster Importance](./outputs_safe/pfi_cluster_importance.png)
+![SAFE - Confusion Matrix](./outputs_Safe_Strategy/confusion_matrix.png)  
+![SAFE - Equity Curve](./outputs_Safe_Strategy/equity_curve.png)  
+![SAFE - MDI Top Features](./outputs_Safe_Strategy/mdi_top_features.png)  
+![SAFE - MDI Cluster Importance](./outputs_Safe_Strategy/mdi_cluster_importance.png)  
+![SAFE - PFI Top Features](./outputs_Safe_Strategy/pfi_top_features.png)  
+![SAFE - PFI Cluster Importance](./outputs_Safe_Strategy/pfi_cluster_importance.png)
 
 ---
 
@@ -122,12 +122,12 @@ Interpretation:
 - Momentum dominates cluster importance, especially in PFI.
 
 ### 4.4 Visuals (aggressive run)
-![AGGR - Confusion Matrix](./outputs_aggressive/confusion_matrix.png)  
-![AGGR - Equity Curve](./outputs_aggressive/equity_curve.png)  
-![AGGR - MDI Top Features](./outputs_aggressive/mdi_top_features.png)  
-![AGGR - MDI Cluster Importance](./outputs_aggressive/mdi_cluster_importance.png)  
-![AGGR - PFI Top Features](./outputs_aggressive/pfi_top_features.png)  
-![AGGR - PFI Cluster Importance](./outputs_aggressive/pfi_cluster_importance.png)
+![AGGR - Confusion Matrix](./outputs_Agressive_Strategy/confusion_matrix.png)  
+![AGGR - Equity Curve](./outputs_Agressive_Strategy/equity_curve.png)  
+![AGGR - MDI Top Features](./outputs_Agressive_Strategy/mdi_top_features.png)  
+![AGGR - MDI Cluster Importance](./outputs_Agressive_Strategy/mdi_cluster_importance.png)  
+![AGGR - PFI Top Features](./outputs_Agressive_Strategy/pfi_top_features.png)  
+![AGGR - PFI Cluster Importance](./outputs_Agressive_Strategy/pfi_cluster_importance.png)
 
 ---
 
