@@ -46,6 +46,27 @@ Yes, results are coherent with the conservative objective:
 - volatility and drawdown are much lower than benchmark
 - return is lower than buy-and-hold, which is expected for a defensive profile
 
+### Feature analysis for SAFE_MODE = True (from SAFE png outputs)
+MDI view:
+- strongest feature is **`ma_gap_8_24`**
+- then **`vol_12`**, **`autocorr_24_lag1`**, **`rsi_14`**, **`ret_6`**
+- regime features are small
+- `ma_cross_8_24` and `vol_spike` are near zero
+
+PFI view:
+- **`ma_gap_8_24`** remains dominant
+- then smaller contributions from `ret_6`, `ret_1`, `ret_lag1`, `rsi_14`
+- regime probability contributes slightly
+- `autocorr_24_lag1` is weak/slightly negative out-of-sample
+
+Cluster interpretation:
+- momentum + trend dominate
+- volatility and serial_corr are secondary
+- regime is minor
+
+Conclusion for features:
+- SAFE mode is trend-structure driven, less reactive to shock/noise, coherent with defensive behavior.
+
 ### Safe visuals
 ![SAFE - Confusion Matrix](./outputs_Safe_Strategy/confusion_matrix.png)  
 ![SAFE - Equity Curve](./outputs_Safe_Strategy/equity_curve.png)  
@@ -87,6 +108,28 @@ Yes, results are coherent with the aggressive objective:
 - strategy captures more trend and beats buy-and-hold on final equity
 - volatility and drawdown increase significantly, consistent with higher-risk behavior
 - longer holding period matches stronger trend participation
+
+### Feature analysis for SAFE_MODE = False (from AGGR png outputs)
+MDI view:
+- strongest feature is **`rsi_14`**
+- second is **`ma_gap_8_24`**
+- then `vol_12`, `autocorr_24_lag1`, `ret_6`
+- `vol_spike` is non-zero (used by trees)
+
+PFI view:
+- **`rsi_14`** is clearly dominant
+- `ma_gap_8_24` remains important
+- serial-corr features add smaller positive value
+- `vol_spike` is near zero in standalone out-of-sample contribution
+
+Cluster interpretation:
+- momentum clearly dominates
+- trend is second
+- serial_corr contributes
+- regime and volatility are smaller in PFI
+
+Conclusion for features:
+- AGGR mode is momentum-led with trend confirmation, coherent with stronger upside capture and higher risk.
 
 ### Aggressive visuals
 ![AGGR - Confusion Matrix](./outputs_Agressive_Strategy/confusion_matrix.png)  
