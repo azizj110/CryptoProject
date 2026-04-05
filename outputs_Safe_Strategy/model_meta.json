@@ -1,0 +1,20 @@
+{
+  "training_strategy": "one_time",
+  "train_period": [
+    "2018-01-02 02:00:00",
+    "2020-12-31 23:00:00"
+  ],
+  "test_period": [
+    "2021-01-01 00:00:00",
+    "2021-12-31 23:00:00"
+  ],
+  "n_train": 26276,
+  "n_test": 8760,
+  "best_params": {
+    "n_estimators": 200,
+    "min_samples_leaf": 5,
+    "max_features": 1.0,
+    "max_depth": 6
+  },
+  "cv_f1_macro": 0.5118603764503998
+}
